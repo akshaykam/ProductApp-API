@@ -1,4 +1,4 @@
-name: Build & Deploy UI
+name: Build & Deploy API
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
 
       - name: Build & Push Docker Image
         run: |
-          IMAGE_URI=543816070942.dkr.ecr.us-east-1.amazonaws.com/product-ui:latest
+          IMAGE_URI=543816070942.dkr.ecr.us-east-1.amazonaws.com/product-api:latest
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
 
@@ -23,8 +23,8 @@ jobs:
         run: |
           git clone https://github.com/akshaykam/Terraform-Infra.git
           cd ops-gitops
-          sed -i 's/tag: .*/tag: "latest"/' ../helm-charts/product-ui/values.yaml
+          sed -i 's/tag: .*/tag: "latest"/' ../helm-charts/product-api/values.yaml
           git config user.email "ci@github.com"
           git config user.name "github-actions"
-          git commit -am "Update UI image tag"
+          git commit -am "Update API image tag"
           git push
