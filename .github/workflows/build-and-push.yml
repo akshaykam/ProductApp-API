@@ -1,0 +1,53 @@
+name: Build and Push API
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::543816070942:role/GitHubActionsOIDCRole-productapp
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        env:
+          IMAGE: 543816070942.dkr.ecr.us-east-1.amazonaws.com/productapp-api
+        run: |
+          TAG=$(date +%Y%m%d%H%M%S)
+          docker build -t $IMAGE:$TAG .
+          docker push $IMAGE:$TAG
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Create bump branch and PR in ops-gitops
+        env:
+          OPS_REPO: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository_owner }}/ops-gitops.git"
+        run: |
+          git config --global user.email "ci@github"
+          git config --global user.name "ci"
+          git clone $OPS_REPO ops
+          cd ops
+          git checkout -b bump-api-${TAG}
+          yq -i ".image.tag = \"${TAG}\"" envs/prod/productapp-api-values.yaml
+          git add envs/prod/productapp-api-values.yaml
+          git commit -m "chore(api): bump image to ${TAG}"
+          git push origin bump-api-${TAG}
+          gh pr create --title "chore(api): bump image to ${TAG}" --body "Automated bump" --base main --head bump-api-${TAG}
