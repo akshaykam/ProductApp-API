@@ -39,7 +39,7 @@ jobs:
 
       - name: Create bump branch and PR in ops-gitops
         env:
-          OPS_REPO: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository_owner }}/ops-gitops.git"
+          OPS_REPO: "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository_owner }}/Terraform-Infra.git"
         run: |
           git config --global user.email "ci@github"
           git config --global user.name "ci"
